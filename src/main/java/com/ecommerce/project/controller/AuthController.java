@@ -159,6 +159,6 @@ public class AuthController {
                         cookie.toString())
                 .body(new MessageResponse("You've been signed out!"));
     }
-    
+
 
 }
