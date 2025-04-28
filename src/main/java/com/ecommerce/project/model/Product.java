@@ -25,7 +25,9 @@ public class Product {
     @NotBlank
     @Size(min = 3, message = "Product Name must contain at least 3 characters")
     private String productName;
+    @Lob
     private String image;
+    @Lob
     @NotBlank
     @Size(min = 6, message = "Product description must contain at least 6 characters")
     private String description;
