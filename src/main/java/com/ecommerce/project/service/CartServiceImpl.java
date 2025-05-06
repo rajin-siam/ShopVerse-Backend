@@ -133,6 +133,15 @@ public class CartServiceImpl implements CartService{
         return cartDTO;
     }
 
+    public CartDTO getCartByEmail(String emailId) {
+        Cart cart = cartRepository.findCartByEmail(emailId);
+        if (cart == null){
+            throw new ResourceNotFoundException("Cart", "emailId", emailId);
+        }
+        return modelMapper.map(cart, CartDTO.class);
+
+    }
+
     @Transactional
     @Override
     public CartDTO updateProductQuantityInCart(Long productId, Integer quantity) {
