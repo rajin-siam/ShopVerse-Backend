@@ -15,7 +15,7 @@ public class OrderResponseDTO {
     private String orderNumber;
     private LocalDateTime orderDate;
     private Double totalAmount;
-    private String status;
+    private String orderStatus;
     private String paymentStatus;
     private String paymentMethod;
     private String paymentId;
