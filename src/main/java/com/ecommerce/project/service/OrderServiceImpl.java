@@ -121,19 +121,49 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderResponse getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder, String status, String search){
+    public OrderDTO getOrderById(Long orderId){
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
+        return modelMapper.map(order, OrderDTO.class);
+    }
+
+    @Override
+    public OrderResponse getAllOrders(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder, String orderStatus, String search){
         pageNumber = Math.max(0, pageNumber - 1);
-        Sort sortByAndOrder =  sortOrder.equalsIgnoreCase("asc") ?
+        Sort sortByAndOrder = sortOrder.equalsIgnoreCase("asc") ?
                 Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sortByAndOrder);
         Page<Order> pageOrders;
-        if (status != null && !status.isEmpty() && search != null && !search.isEmpty()) {
-            pageOrders = orderRepository.findByOrderStatusAndEmailContainingOrOrderIdContaining(
-                    status, search, search, pageDetails);
-        } else if (status != null && !status.isEmpty()) {
-            pageOrders = orderRepository.findByEmailContainingOrOrderIdContaining(search, search, pageDetails);
+
+        // Fixed search logic with proper conditionals and parameter order
+        if (orderStatus != null && !orderStatus.isEmpty() && search != null && !search.isEmpty()) {
+            // Both status and search are provided
+            try {
+                // Try to parse search as a Long for orderId
+                Long orderId = Long.parseLong(search);
+                pageOrders = orderRepository.findByOrderStatusAndEmailContainingOrOrderStatusAndOrderId(
+                        orderStatus, search, orderStatus, orderId, pageDetails);
+            } catch (NumberFormatException e) {
+                // If search can't be parsed as Long, just use it as email
+                pageOrders = orderRepository.findByOrderStatusAndEmailContaining(
+                        orderStatus, search, pageDetails);
+            }
+        } else if (orderStatus != null && !orderStatus.isEmpty()) {
+            // Only status is provided
+            pageOrders = orderRepository.findByOrderStatus(orderStatus, pageDetails);
+        } else if (search != null && !search.isEmpty()) {
+            // Only search is provided
+            try {
+                // Try to parse search as a Long for orderId
+                Long orderId = Long.parseLong(search);
+                pageOrders = orderRepository.findByEmailContainingOrOrderId(search, orderId, pageDetails);
+            } catch (NumberFormatException e) {
+                // If search can't be parsed as Long, just use it as email
+                pageOrders = orderRepository.findByEmailContaining(search, pageDetails);
+            }
         } else {
+            // No filters provided
             pageOrders = orderRepository.findAll(pageDetails);
         }
 
@@ -152,7 +182,6 @@ public class OrderServiceImpl implements OrderService {
         return orderResponse;
     }
 
-
     @Override
     @Transactional
     public OrderDTO updateOrderStatus(Long orderId, String orderStatus) {
@@ -163,16 +192,6 @@ public class OrderServiceImpl implements OrderService {
 
         return modelMapper.map(updatedOrder, OrderDTO.class);
     }
-
-//    public OrderResponseDTO updateOrderStatus(Long orderId, String status) {
-//        Order order = orderRepository.findById(orderId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
-//
-//        order.setOrderStatus(status);
-//        Order updatedOrder = orderRepository.save(order);
-//
-//        return modelMapper.map(updatedOrder, OrderResponseDTO.class);
-//    }
 
     @Override
     @Transactional

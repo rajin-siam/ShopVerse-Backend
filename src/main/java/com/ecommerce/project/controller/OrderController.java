@@ -45,11 +45,10 @@ public class OrderController {
         return new ResponseEntity<>(orderResponse, HttpStatus.CREATED);
     }
 
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<OrderResponseDTO> getOrderDetails(@PathVariable Long orderId) {
-        String email = authUtil.loggedInEmail();
-        OrderResponseDTO orderResponse = orderService.getOrderByIdAndEmail(orderId, email);
-        return ResponseEntity.ok(orderResponse);
+    @GetMapping("/admin/order/{orderId}")
+    public ResponseEntity<OrderDTO> getOrderDetails(@PathVariable Long orderId) {
+        OrderDTO orderData = orderService.getOrderById(orderId);
+        return ResponseEntity.ok(orderData);
     }
 
     // New API methods for order management
