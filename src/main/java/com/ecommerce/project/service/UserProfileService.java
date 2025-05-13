@@ -1,6 +1,7 @@
 package com.ecommerce.project.service;
 
 import com.ecommerce.project.model.UserProfile;
+import com.ecommerce.project.payload.UserProfileDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,11 +10,11 @@ public interface UserProfileService {
 
 
     @Transactional(readOnly = true)
-    UserProfile getUserProfile(Long userId);
+    UserProfileDTO getUserProfile(Long userId);
 
     @Transactional
-    UserProfile createUserProfile(Long userId, UserProfile userProfile);
+    UserProfileDTO createUserProfile(Long userId, UserProfileDTO userProfile);
 
     @Transactional
-    UserProfile updateUserProfile(Long userId, UserProfile userProfileDetails);
+    UserProfileDTO updateUserProfile(Long userId, UserProfileDTO userProfileDetails);
 }

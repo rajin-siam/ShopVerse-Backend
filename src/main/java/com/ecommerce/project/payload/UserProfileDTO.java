@@ -1,4 +1,4 @@
-package com.ecommerce.project.dto;
+package com.ecommerce.project.payload;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class UserProfileDTO {
     private Long id;
     private String fullName;
