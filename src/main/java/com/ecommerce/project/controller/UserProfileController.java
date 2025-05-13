@@ -4,12 +4,11 @@ import com.ecommerce.project.payload.UserProfileDTO;
 import com.ecommerce.project.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+//import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.ecommerce.project.model.UserProfileDTO;
 
 @RestController
-@RequestMapping("/api/user-profiles")
+@RequestMapping("/api/public/user-profiles")
 @RequiredArgsConstructor
 public class UserProfileController {
 

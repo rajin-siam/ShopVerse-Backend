@@ -76,4 +76,8 @@ public class User {
     private Set<Product> products;
 
 
+    @OneToOne(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private UserProfile userProfile;
+
+
 }

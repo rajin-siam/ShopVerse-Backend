@@ -20,7 +20,11 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Transactional(readOnly = true)
     public UserProfileDTO getUserProfile(Long userId) {
-        return modelMapper.map(userProfileRepository.findByUserId(userId),  UserProfileDTO.class);
+        UserProfile profile = userProfileRepository.findByUser_UserId(userId);
+        if (profile == null) {
+            return null;
+        }
+        return modelMapper.map(profile, UserProfileDTO.class);
     }
 
     @Transactional
@@ -34,7 +38,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     @Transactional
     public UserProfileDTO updateUserProfile(Long userId, UserProfileDTO userProfileDetailsDTO) {
-        UserProfile existingProfile = userProfileRepository.findByUserId(userId);
+        UserProfile existingProfile = userProfileRepository.findByUser_UserId(userId);
 
 
         UserProfile userProfileDetails = modelMapper.map(userProfileDetailsDTO,UserProfile.class);

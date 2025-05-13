@@ -16,6 +16,5 @@ public class UserProfileDTO {
     private String gender;
     private String phone;
     private LocalDate dateOfBirth;
-    private String bio;
     private Long userId;
 }
