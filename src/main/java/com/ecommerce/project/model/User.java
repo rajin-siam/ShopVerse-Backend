@@ -27,7 +27,7 @@ public class User {
     private Long userId;
 
     @NotBlank
-    @Size(max = 20)
+    @Size(max = 50)
     @Column(name = "username")
     private String userName;
 
@@ -37,16 +37,34 @@ public class User {
     @Column(name = "email")
     private String email;
 
-    @NotBlank
     @Size(max = 120)
-    @Column(name = "password")
+    @Column(name = "password", nullable = true)
     private String password;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
+    private AuthProvider provider = AuthProvider.LOCAL;
+
 
     public User(String userName, String email, String password) {
         this.userName = userName;
         this.email = email;
         this.password = password;
+        this.provider = AuthProvider.LOCAL;
     }
+
+
+    public User(String userName, String email, String providerId, AuthProvider provider) {
+        this.userName = userName;
+        this.email = email;
+        this.providerId = providerId;
+        this.provider = provider;
+        this.password = "OAUTH_USER";
+    }
+
 
     @Setter
     @Getter
@@ -60,13 +78,9 @@ public class User {
     @Getter
     @Setter
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
-//    @JoinTable(name = "user_address",
-//            joinColumns = @JoinColumn(name = "user_id"),
-//            inverseJoinColumns = @JoinColumn(name = "address_id"))
     private List<Address> addresses = new ArrayList<>();
 
     @OneToOne(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-
     private Cart cart;
 
     @ToString.Exclude
@@ -74,6 +88,4 @@ public class User {
             cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             orphanRemoval = true)
     private Set<Product> products;
-
-
 }
