@@ -21,6 +21,8 @@ public class UserInfoResponse {
         this.roles = roles;
     }
 
+
+
     public Long getId() {
         return id;
     }

@@ -6,6 +6,7 @@ import com.ecommerce.project.model.User;
 import com.ecommerce.project.repositories.RoleRepository;
 import com.ecommerce.project.repositories.UserRepository;
 import com.ecommerce.project.security.jwt.JwtUtils;
+import com.ecommerce.project.security.request.GoogleTokenRequest;
 import com.ecommerce.project.security.request.LoginRequest;
 import com.ecommerce.project.security.request.SignupRequest;
 import com.ecommerce.project.security.response.MessageResponse;
@@ -24,7 +25,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
+import com.ecommerce.project.security.services.GoogleService;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,6 +47,9 @@ public class AuthController {
 
     @Autowired
     PasswordEncoder encoder;
+
+    @Autowired
+    GoogleService googleService;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -160,5 +164,39 @@ public class AuthController {
                 .body(new MessageResponse("You've been signed out!"));
     }
 
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody GoogleTokenRequest request) {
+        try {
+            // 1. Verify token, get or create user
+            User user = googleService.processGoogleToken(request.getToken());
+
+            // 2. Convert User -> UserDetailsImpl
+            UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+
+            // 3. Generate JWT token as cookie
+            ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+
+            // 4. Extract roles
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(item -> item.getAuthority())
+                    .collect(Collectors.toList());
+
+            // 5. Return response with cookie in header
+            UserInfoResponse response = new UserInfoResponse(
+                    userDetails.getId(),
+                    userDetails.getUsername(),
+                    roles,
+                    jwtCookie.toString()
+            );
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                    .body(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("Google authentication failed: " + e.getMessage()));
+        }
+    }
 
 }
