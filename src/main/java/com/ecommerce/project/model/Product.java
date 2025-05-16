@@ -50,4 +50,8 @@ public class Product {
     private List<CartItem> cartItems = new ArrayList<>();
 
 
+    @ToString.Exclude
+    @OneToMany(mappedBy = "product", cascade = {CascadeType.MERGE, CascadeType.PERSIST})
+    private List<WishlistItem> wishlistItems = new ArrayList<>();
+
 }
