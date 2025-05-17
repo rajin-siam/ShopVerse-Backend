@@ -92,4 +92,9 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Wishlist wishlist;
+
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<ProductReview> reviews = new ArrayList<>();
 }
