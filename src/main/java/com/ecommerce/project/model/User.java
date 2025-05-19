@@ -3,10 +3,12 @@ package com.ecommerce.project.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.data.repository.cdi.Eager;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -31,11 +33,24 @@ public class User {
     @Column(name = "username")
     private String userName;
 
+
+    @Size(max = 50)
+    @Column(name = "full_name")
+    private String fullName;
+
     @NotBlank
     @Size(max = 50)
     @Email
     @Column(name = "email")
     private String email;
+
+    @Size(max = 20)
+    @Pattern(regexp = "^\\+?[0-9\\s()-]*$") // Basic phone validation
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
 
     @Size(max = 120)
     @Column(name = "password", nullable = true)

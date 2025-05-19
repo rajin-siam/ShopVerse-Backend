@@ -26,6 +26,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.ecommerce.project.security.services.GoogleService;
+
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,8 +76,18 @@ public class AuthController {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
-        UserInfoResponse response = new UserInfoResponse(userDetails.getId(),
-                userDetails.getUsername(), roles, jwtCookie.toString());
+        String formattedDateOfBirth = userDetails.getDateOfBirth() != null ?
+                userDetails.getDateOfBirth().format(DateTimeFormatter.ISO_DATE) : null;
+
+        UserInfoResponse response = new UserInfoResponse(
+                userDetails.getId(),
+                userDetails.getUsername(),
+                userDetails.getEmail(),
+                userDetails.getFullName(),
+                userDetails.getPhoneNumber(),
+                formattedDateOfBirth,
+                roles,
+                jwtCookie.toString());
 
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
                         jwtCookie.toString())
@@ -96,6 +108,11 @@ public class AuthController {
         User user = new User(signUpRequest.getUsername(),
                 signUpRequest.getEmail(),
                 encoder.encode(signUpRequest.getPassword()));
+
+        // Set additional user fields
+        user.setFullName(signUpRequest.getFullName());
+        user.setPhoneNumber(signUpRequest.getPhoneNumber());
+        user.setDateOfBirth(signUpRequest.getDateOfBirth());
 
         Set<String> strRoles = signUpRequest.getRole();
         Set<Role> roles = new HashSet<>();
@@ -141,7 +158,6 @@ public class AuthController {
             return "";
     }
 
-
     @GetMapping("/user")
     public ResponseEntity<?> getUserDetails(Authentication authentication){
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -150,8 +166,18 @@ public class AuthController {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
-        UserInfoResponse response = new UserInfoResponse(userDetails.getId(),
-                userDetails.getUsername(), roles);
+        String formattedDateOfBirth = userDetails.getDateOfBirth() != null ?
+                userDetails.getDateOfBirth().format(DateTimeFormatter.ISO_DATE) : null;
+
+        UserInfoResponse response = new UserInfoResponse(
+                userDetails.getId(),
+                userDetails.getUsername(),
+                userDetails.getEmail(),
+                userDetails.getFullName(),
+                userDetails.getPhoneNumber(),
+                formattedDateOfBirth,
+                roles,
+                null);
 
         return ResponseEntity.ok().body(response);
     }
@@ -163,7 +189,6 @@ public class AuthController {
                         cookie.toString())
                 .body(new MessageResponse("You've been signed out!"));
     }
-
 
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody GoogleTokenRequest request) {
@@ -182,10 +207,17 @@ public class AuthController {
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
 
+            String formattedDateOfBirth = userDetails.getDateOfBirth() != null ?
+                    userDetails.getDateOfBirth().format(DateTimeFormatter.ISO_DATE) : null;
+
             // 5. Return response with cookie in header
             UserInfoResponse response = new UserInfoResponse(
                     userDetails.getId(),
                     userDetails.getUsername(),
+                    userDetails.getEmail(),
+                    userDetails.getFullName(),
+                    userDetails.getPhoneNumber(),
+                    formattedDateOfBirth,
                     roles,
                     jwtCookie.toString()
             );
@@ -198,5 +230,4 @@ public class AuthController {
                     .body(new MessageResponse("Google authentication failed: " + e.getMessage()));
         }
     }
-
 }
