@@ -22,7 +22,6 @@ public class GoogleService {
 
     private static final String CLIENT_ID = "490184832474-47nbop45u4kcunld04aafg2f40o3ptdv.apps.googleusercontent.com";// Replace with your actual client ID
 
-
     @Autowired
     private UserRepository userRepository;
 
@@ -67,9 +66,14 @@ public class GoogleService {
                 // Create new user
                 User newUser = new User();
                 newUser.setEmail(email);
-                newUser.setUserName(name != null && !name.isEmpty() ? name : email); // Use name if available
+                newUser.setUserName(email.substring(0, email.indexOf('@'))); // Create username from email
                 newUser.setProvider(AuthProvider.GOOGLE);
                 newUser.setProviderId(googleId);
+
+                // Set fullName from Google profile if available
+                if (name != null && !name.isEmpty()) {
+                    newUser.setFullName(name);
+                }
 
                 // Fix: Set a placeholder encrypted password for OAuth users
                 newUser.setPassword(passwordEncoder.encode("OAUTH_USER_" + googleId));
