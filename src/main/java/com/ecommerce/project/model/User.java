@@ -3,10 +3,12 @@ package com.ecommerce.project.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.data.repository.cdi.Eager;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -27,9 +29,14 @@ public class User {
     private Long userId;
 
     @NotBlank
-    @Size(max = 20)
+    @Size(max = 50)
     @Column(name = "username")
     private String userName;
+
+
+    @Size(max = 50)
+    @Column(name = "full_name")
+    private String fullName;
 
     @NotBlank
     @Size(max = 50)
@@ -37,16 +44,42 @@ public class User {
     @Column(name = "email")
     private String email;
 
-    @NotBlank
+    @Size(max = 20)
+    @Pattern(regexp = "^\\+?[0-9\\s()-]*$") // Basic phone validation
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
     @Size(max = 120)
-    @Column(name = "password")
+    @Column(name = "password", nullable = true)
     private String password;
+
+    @Column(name = "provider_id")
+    private String providerId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider")
+    private AuthProvider provider = AuthProvider.LOCAL;
+
 
     public User(String userName, String email, String password) {
         this.userName = userName;
         this.email = email;
         this.password = password;
+        this.provider = AuthProvider.LOCAL;
     }
+
+
+    public User(String userName, String email, String providerId, AuthProvider provider) {
+        this.userName = userName;
+        this.email = email;
+        this.providerId = providerId;
+        this.provider = provider;
+        this.password = "OAUTH_USER";
+    }
+
 
     @Setter
     @Getter
@@ -60,13 +93,9 @@ public class User {
     @Getter
     @Setter
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
-//    @JoinTable(name = "user_address",
-//            joinColumns = @JoinColumn(name = "user_id"),
-//            inverseJoinColumns = @JoinColumn(name = "address_id"))
     private List<Address> addresses = new ArrayList<>();
 
     @OneToOne(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-
     private Cart cart;
 
     @ToString.Exclude
@@ -76,4 +105,11 @@ public class User {
     private Set<Product> products;
 
 
+    @OneToOne(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Wishlist wishlist;
+
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<ProductReview> reviews = new ArrayList<>();
 }

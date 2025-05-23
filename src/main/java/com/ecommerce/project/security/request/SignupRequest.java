@@ -1,5 +1,6 @@
 package com.ecommerce.project.security.request;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 import jakarta.validation.constraints.*;
@@ -15,6 +16,14 @@ public class SignupRequest {
     @Size(max = 50)
     @Email
     private String email;
+
+    @Size(max = 50)
+    private String fullName;
+
+    @Size(max = 20)
+    @Pattern(regexp = "^\\+?[0-9\\s()-]*$") // Basic phone validation
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
 
     private Set<String> role;
 
