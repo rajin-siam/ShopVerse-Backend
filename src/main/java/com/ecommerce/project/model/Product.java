@@ -4,19 +4,20 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-@Data
+@Getter @Setter  // Replace @Data with @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "products")
-@ToString
 public class Product {
 
     @Id
@@ -49,35 +50,33 @@ public class Product {
     private User user;
 
     @ToString.Exclude
-    @OneToMany(mappedBy = "product", cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "product", cascade = {CascadeType.MERGE, CascadeType.PERSIST}, fetch = FetchType.LAZY)
     private List<CartItem> cartItems = new ArrayList<>();
 
     @ToString.Exclude
     @OneToMany(mappedBy = "product", cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     private List<WishlistItem> wishlistItems = new ArrayList<>();
 
-    private double averageRating;  // Summary rating
-    private int ratingCount;       // Total number of ratings
+    private double averageRating;
+    private int ratingCount;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<ProductReview> reviews = new ArrayList<>();
 
-    // Helper method to add a review and update rating stats
+    // Helper methods
     public void addReview(ProductReview review) {
         reviews.add(review);
         review.setProduct(this);
         updateRatingStats();
     }
 
-    // Helper method to remove a review and update rating stats
     public void removeReview(ProductReview review) {
         reviews.remove(review);
         review.setProduct(null);
         updateRatingStats();
     }
 
-    // Helper method to update rating statistics
     private void updateRatingStats() {
         if (reviews.isEmpty()) {
             this.averageRating = 0;
@@ -87,5 +86,29 @@ public class Product {
             this.averageRating = sum / reviews.size();
             this.ratingCount = reviews.size();
         }
+    }
+
+    // Custom equals and hashCode using only ID
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Product product = (Product) obj;
+        return Objects.equals(productId, product.productId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(productId);
+    }
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "productId=" + productId +
+                ", productName='" + productName + '\'' +
+                ", price=" + price +
+                ", quantity=" + quantity +
+                '}';
     }
 }
