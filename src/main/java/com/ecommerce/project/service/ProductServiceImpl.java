@@ -231,5 +231,10 @@ public class ProductServiceImpl implements ProductService {
         return modelMapper.map(updatedProduct, ProductDTO.class);
     }
 
+    @Override
+    public Long getTotalProductCount() {
+        return productRepository.getTotalProductCount();
+    }
+
 
 }

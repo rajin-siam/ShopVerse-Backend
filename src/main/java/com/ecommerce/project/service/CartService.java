@@ -1,5 +1,6 @@
 package com.ecommerce.project.service;
 
+import com.ecommerce.project.model.Cart;
 import com.ecommerce.project.payload.CartDTO;
 import jakarta.transaction.Transactional;
 
@@ -20,4 +21,6 @@ public interface CartService {
     void updateProductInCarts(Long cartId, Long productId);
 
     CartDTO getCartByEmail(String emailId);
+
+    Cart createCart();
 }
