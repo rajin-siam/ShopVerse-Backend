@@ -91,4 +91,11 @@ public class ProductController {
         ProductDTO updatedProduct = productService.updateProductImage(productId, image);
         return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
     }
+
+    @PutMapping("/admin/products/{productId}/discount/{discountAmount}")
+    public ResponseEntity<ProductDTO> updateProductDiscount(@PathVariable Long productId,
+                                                            @PathVariable("discountAmount") Double discount){
+        ProductDTO updatedProduct = productService.updateProductDiscount(productId, discount);
+        return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+    }
 }

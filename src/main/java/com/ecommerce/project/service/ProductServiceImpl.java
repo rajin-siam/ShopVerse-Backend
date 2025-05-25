@@ -236,5 +236,27 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.getTotalProductCount();
     }
 
+    @Override
+    public ProductDTO updateProductDiscount(Long productId, Double discount) {
+        Product productFromDb = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+
+        if (discount < 0 || discount > 100) {
+            throw new APIException("Discount must be between 0 and 100 percent");
+        }
+
+        productFromDb.setDiscount(discount);
+
+        double specialPrice = productFromDb.getPrice() -
+                ((discount * 0.01) * productFromDb.getPrice());
+        productFromDb.setSpecialPrice(specialPrice);
+
+        Product savedProduct = productRepository.save(productFromDb);
+
+        List<Cart> carts = cartRepository.findCartsByProductId(productId);
+        carts.forEach(cart -> cartService.updateProductInCarts(cart.getCartId(), productId));
+
+        return modelMapper.map(savedProduct, ProductDTO.class);
+    }
 
 }
