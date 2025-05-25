@@ -11,4 +11,6 @@ public interface ProductReviewService {
     List<ProductReviewDTO> getReviewsByProductId(Long productId);
     List<ProductReviewDTO> getReviewsByUserId(Long userId);
     ProductReviewDTO getUserReviewForProduct(Long productId);
+    boolean hasUserReviewedProduct(Long productId);
+    void deleteUserReviewForProduct(Long productId);
 }

@@ -11,44 +11,57 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "product_reviews")
+@Table(name = "product_reviews",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "user_id"}))
 public class ProductReview {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Min(1)
-    @Max(5)
-    private int rating;  // Rating between 1 to 5
+    @Min(value = 1, message = "Rating must be at least 1")
+    @Max(value = 5, message = "Rating must not exceed 5")
+    @Column(nullable = false)
+    private int rating;
 
-    @NotBlank
+    @NotBlank(message = "Review title cannot be empty")
+    @Column(nullable = false, length = 200)
     private String title;
 
     @Lob
-    @NotBlank
+    @NotBlank(message = "Review content cannot be empty")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @PrePersist
-    public void onCreate() {
+    protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
-    // Override equals and hashCode to prevent circular reference issues
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof ProductReview)) return false;
         ProductReview that = (ProductReview) o;
         return id != null && id.equals(that.id);
     }
@@ -64,7 +77,6 @@ public class ProductReview {
                 "id=" + id +
                 ", rating=" + rating +
                 ", title='" + title + '\'' +
-                ", content='" + content + '\'' +
                 ", createdAt=" + createdAt +
                 '}';
     }

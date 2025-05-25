@@ -1,25 +1,24 @@
 package com.ecommerce.project.service;
 
+import com.ecommerce.project.exceptions.APIException;
+import com.ecommerce.project.exceptions.ResourceNotFoundException;
 import com.ecommerce.project.payload.ProductReviewDTO;
 import com.ecommerce.project.model.Product;
 import com.ecommerce.project.model.ProductReview;
 import com.ecommerce.project.model.User;
 import com.ecommerce.project.repositories.ProductRepository;
 import com.ecommerce.project.repositories.ProductReviewRepository;
-import com.ecommerce.project.repositories.UserRepository;
-import com.ecommerce.project.service.ProductReviewService;
 import com.ecommerce.project.util.AuthUtil;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ProductReviewServiceImpl implements ProductReviewService {
 
     @Autowired
@@ -29,25 +28,22 @@ public class ProductReviewServiceImpl implements ProductReviewService {
     private ProductRepository productRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private AuthUtil authUtil;
+
     @Autowired
     private ModelMapper modelMapper;
 
     @Override
-    @Transactional
     public ProductReviewDTO createReview(ProductReviewDTO reviewDto) {
         User currentUser = authUtil.loggedInUser();
+
         Product product = productRepository.findById(reviewDto.getProductId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", reviewDto.getProductId()));
 
         // Check if user already reviewed this product
-        reviewRepository.findByProductProductIdAndUserUserId(product.getProductId(), currentUser.getUserId())
-                .ifPresent(review -> {
-                    throw new ResponseStatusException(HttpStatus.CONFLICT, "You have already reviewed this product");
-                });
+        if (reviewRepository.existsByProductProductIdAndUserUserId(product.getProductId(), currentUser.getUserId())) {
+            throw new APIException("You have already reviewed this product. Use update instead.");
+        }
 
         ProductReview review = new ProductReview();
         review.setRating(reviewDto.getRating());
@@ -58,24 +54,22 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
         ProductReview savedReview = reviewRepository.save(review);
 
-        // Update product average rating
-        updateProductRating(product);
+        // Update product rating statistics
+        updateProductRatingStatistics(product);
 
-        return modelMapper.map(savedReview, ProductReviewDTO.class);
+        return mapToDTO(savedReview);
     }
 
-
     @Override
-    @Transactional
     public ProductReviewDTO updateReview(Long reviewId, ProductReviewDTO reviewDto) {
         User currentUser = authUtil.loggedInUser();
 
         ProductReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("ProductReview", "reviewId", reviewId));
 
-        // Ensure the review belongs to the current user
+        // Check ownership
         if (!review.getUser().getUserId().equals(currentUser.getUserId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own reviews");
+            throw new APIException("You can only update your own reviews");
         }
 
         review.setRating(reviewDto.getRating());
@@ -84,91 +78,119 @@ public class ProductReviewServiceImpl implements ProductReviewService {
 
         ProductReview updatedReview = reviewRepository.save(review);
 
-        // Update product average rating
-        updateProductRating(review.getProduct());
+        // Update product rating statistics
+        updateProductRatingStatistics(review.getProduct());
 
-        return mapToDto(updatedReview);
+        return mapToDTO(updatedReview);
     }
 
     @Override
-    @Transactional
     public void deleteReview(Long reviewId) {
         User currentUser = authUtil.loggedInUser();
 
         ProductReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("ProductReview", "reviewId", reviewId));
 
-        //Next Feature: Ensure the review belongs to the current user or user is admin
+        // Check ownership or admin role (you can add admin check here)
+        if (!review.getUser().getUserId().equals(currentUser.getUserId())) {
+            throw new APIException("You can only delete your own reviews");
+        }
 
         Product product = review.getProduct();
         reviewRepository.delete(review);
 
-        // Update product average rating
-        updateProductRating(product);
+        // Update product rating statistics
+        updateProductRatingStatistics(product);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductReviewDTO getReviewById(Long reviewId) {
         ProductReview review = reviewRepository.findById(reviewId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
-        User currentUser = authUtil.loggedInUser();
-        ProductReviewDTO productReviewDTO = modelMapper.map(review, ProductReviewDTO.class);
-        return productReviewDTO;
+                .orElseThrow(() -> new ResourceNotFoundException("ProductReview", "reviewId", reviewId));
+
+        return mapToDTO(review);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductReviewDTO> getReviewsByProductId(Long productId) {
-        List<ProductReview> reviews = reviewRepository.findByProductProductId(productId);
-        return reviews.stream().map(this::mapToDto).collect(Collectors.toList());
+        // Check if product exists
+        productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
+
+        List<ProductReview> reviews = reviewRepository.findByProductIdWithUserAndProduct(productId);
+        return reviews.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductReviewDTO> getReviewsByUserId(Long userId) {
-        System.out.println(userId);
-        List<ProductReview> reviews = reviewRepository.findByUserUserId(userId);
-        return reviews.stream().map(this::mapToDto).collect(Collectors.toList());
+        List<ProductReview> reviews = reviewRepository.findByUserUserIdOrderByCreatedAtDesc(userId);
+        return reviews.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductReviewDTO getUserReviewForProduct(Long productId) {
         User currentUser = authUtil.loggedInUser();
 
         ProductReview review = reviewRepository.findByProductProductIdAndUserUserId(productId, currentUser.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "You haven't reviewed this product yet"));
+                .orElseThrow(() -> new ResourceNotFoundException("ProductReview", "productId and userId",
+                        productId + " and " + currentUser.getUserId()));
 
-        return mapToDto(review);
+        return mapToDTO(review);
     }
 
-    private ProductReviewDTO mapToDto(ProductReview review) {
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasUserReviewedProduct(Long productId) {
+        User currentUser = authUtil.loggedInUser();
+        return reviewRepository.existsByProductProductIdAndUserUserId(productId, currentUser.getUserId());
+    }
+
+    @Override
+    public void deleteUserReviewForProduct(Long productId) {
+        User currentUser = authUtil.loggedInUser();
+
+        ProductReview review = reviewRepository.findByProductProductIdAndUserUserId(productId, currentUser.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("ProductReview", "productId and userId",
+                        productId + " and " + currentUser.getUserId()));
+
+        Product product = review.getProduct();
+        reviewRepository.delete(review);
+
+        // Update product rating statistics
+        updateProductRatingStatistics(product);
+    }
+
+    private ProductReviewDTO mapToDTO(ProductReview review) {
         ProductReviewDTO dto = new ProductReviewDTO();
         dto.setId(review.getId());
         dto.setRating(review.getRating());
         dto.setTitle(review.getTitle());
         dto.setContent(review.getContent());
         dto.setCreatedAt(review.getCreatedAt());
+        dto.setUpdatedAt(review.getUpdatedAt());
         dto.setProductId(review.getProduct().getProductId());
+        dto.setProductName(review.getProduct().getProductName());
+        dto.setUserId(review.getUser().getUserId());
         dto.setUserName(review.getUser().getUserName());
         dto.setUserEmail(review.getUser().getEmail());
         return dto;
     }
 
-    @Transactional
-    protected void updateProductRating(Product product) {
-        List<ProductReview> reviews = reviewRepository.findByProductProductId(product.getProductId());
+    private void updateProductRatingStatistics(Product product) {
+        Double averageRating = reviewRepository.findAverageRatingByProductId(product.getProductId());
+        Long reviewCount = reviewRepository.countReviewsByProductId(product.getProductId());
 
-        if (reviews.isEmpty()) {
-            product.setAverageRating(0);
-            product.setRatingCount(0);
-        } else {
-            double sum = reviews.stream().mapToInt(ProductReview::getRating).sum();
-            double average = sum / reviews.size();
-
-            product.setAverageRating(average);
-            product.setRatingCount(reviews.size());
-        }
+        product.setAverageRating(averageRating != null ? averageRating : 0.0);
+        product.setRatingCount(reviewCount != null ? reviewCount.intValue() : 0);
 
         productRepository.save(product);
     }
-
-
 }

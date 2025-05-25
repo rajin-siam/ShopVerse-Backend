@@ -2,7 +2,6 @@ package com.ecommerce.project.controller;
 
 import com.ecommerce.project.payload.ProductReviewDTO;
 import com.ecommerce.project.service.ProductReviewService;
-import com.ecommerce.project.util.AuthUtil;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/public/reviews")
@@ -20,13 +20,14 @@ public class ProductReviewController {
     private ProductReviewService reviewService;
 
     @PostMapping
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ProductReviewDTO> createReview(@Valid @RequestBody ProductReviewDTO reviewDto) {
-        System.out.println(reviewDto.toString());
         ProductReviewDTO createdReview = reviewService.createReview(reviewDto);
         return new ResponseEntity<>(createdReview, HttpStatus.CREATED);
     }
 
     @PutMapping("/{reviewId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ProductReviewDTO> updateReview(
             @PathVariable Long reviewId,
             @Valid @RequestBody ProductReviewDTO reviewDto) {
@@ -35,9 +36,10 @@ public class ProductReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> deleteReview(@PathVariable Long reviewId) {
         reviewService.deleteReview(reviewId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(Map.of("message", "Review deleted successfully"));
     }
 
     @GetMapping("/{reviewId}")
@@ -59,11 +61,23 @@ public class ProductReviewController {
     }
 
     @GetMapping("/my-review/product/{productId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ProductReviewDTO> getUserReviewForProduct(@PathVariable Long productId) {
         ProductReviewDTO review = reviewService.getUserReviewForProduct(productId);
         return ResponseEntity.ok(review);
     }
 
+    @GetMapping("/check/product/{productId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Boolean>> checkUserReview(@PathVariable Long productId) {
+        boolean hasReviewed = reviewService.hasUserReviewedProduct(productId);
+        return ResponseEntity.ok(Map.of("hasReviewed", hasReviewed));
+    }
 
-
+    @DeleteMapping("/my-review/product/{productId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> deleteUserReviewForProduct(@PathVariable Long productId) {
+        reviewService.deleteUserReviewForProduct(productId);
+        return ResponseEntity.ok(Map.of("message", "Your review has been deleted successfully"));
+    }
 }
