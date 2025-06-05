@@ -77,7 +77,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5174", // Development
                 "https://shopverse14.netlify.app", // Railway URL (update after deployment)
-                "https://your-frontend-domain.com" // Your frontend URL
+                "https://shopverse-frontend-zele.onrender.com" // Your frontend URL
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
