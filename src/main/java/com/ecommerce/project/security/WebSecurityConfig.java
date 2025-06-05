@@ -76,8 +76,7 @@ public class WebSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5174", // Development
-                "https://shopverse14.netlify.app", // Railway URL (update after deployment)
-                "https://shopverse-frontend-rabt.onrender.com" // Your frontend URL
+                "https://shopverse-frontend-rabt.onrender.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

@@ -11,7 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
                         .allowedOrigins("http://localhost:5174")
-                        .allowedMethods("https://shopverse14.netlify.app")
+                        .allowedOrigins("https://shopverse-frontend-rabt.onrender.com")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")
                         .allowedHeaders("*")
                         .allowCredentials(true);
